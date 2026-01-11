@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BDB - Bible DataBase</title>
+    <style>
+        /* --- עיצוב כללי --- */
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0; padding: 0; text-align: center;
+        }
+        header {
+            background-color: #1f1f1f; padding: 15px;
+            border-bottom: 3px solid #f5c518; margin-bottom: 30px;
+        }
+        h1 { margin: 0; font-size: 2.5rem; }
+        .yellow { color: #f5c518; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        
+        /* הגריד */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+
+        /* כותרות אזורים (תורה נביאים כתובים) */
+        .section-title {
+            text-align: right;
+            color: #f5c518;
+            border-bottom: 1px solid #333;
+            padding-bottom: 5px;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+
+        /* כרטיסייה */
+        .card {
+            background-color: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .card:hover { transform: scale(1.05); background-color: #252525; border-color: #f5c518; }
+        .icon { font-size: 2rem; margin-bottom: 10px; }
+        .title { font-weight: bold; font-size: 1.1rem; }
+        .subtitle { font-size: 0.8rem; color: #888; margin-top: 5px; }
+
+        /* כפתור חזרה */
+        .back-btn {
+            background-color: #333; color: white; border: none;
+            padding: 10px 20px; border-radius: 5px; cursor: pointer;
+            margin-bottom: 20px; font-size: 1rem;
+            display: inline-block;
+        }
+        .back-btn:hover { background-color: #555; }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>B<span class="yellow">D</span>B</h1>
+        <p>דירוג פרקי התנ"ך</p>
+    </header>
+
+    <div class="container">
+        
+        <div id="books-view">
+            </div>
+
+        <div id="chapters-view" class="hidden">
+            <button onclick="showBooks()" class="back-btn">⬅ חזרה לרשימת הספרים</button>
+            <h2 id="selected-book-title">פרקים</h2>
+            <div id="chapters-grid" class="grid"></div>
+        </div>
+
+    </div>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+      import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyDgU8HrSiI2l3WAAoZ1WcB1Rgs4SYEUBBc",
+        authDomain: "bdb-bible-ratings.firebaseapp.com",
+        projectId: "bdb-bible-ratings",
+        storageBucket: "bdb-bible-ratings.firebasestorage.app",
+        messagingSenderId: "931047373276",
+        appId: "1:931047373276:web:ada62fb6c74101aae3b719",
+        measurementId: "G-Y0M5JPE6TY"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+
+      // --- המאגר המלא - מעודכן עם חלוקה ל-א' ו-ב' ---
+      const tanakhData = [
+          {
+              category: "תורה",
+              books: [
+                  { name: "בראשית", icon: "🌍", chapters: 50 },
+                  { name: "שמות", icon: "🌊", chapters: 40 },
+                  { name: "ויקרא", icon: "🔥", chapters: 27 },
+                  { name: "במדבר", icon: "⛺", chapters: 36 },
+                  { name: "דברים", icon: "📜", chapters: 34 }
+              ]
+          },
+          {
+              category: "נביאים",
+              books: [
+                  { name: "יהושע", icon: "⚔️", chapters: 24 },
+                  { name: "שופטים", icon: "⚖️", chapters: 21 },
+                  { name: "שמואל א", icon: "👑", chapters: 31 },
+                  { name: "שמואל ב", icon: "👑", chapters: 24 },
+                  { name: "מלכים א", icon: "🏰", chapters: 22 },
+                  { name: "מלכים ב", icon: "🏰", chapters: 25 },
+                  { name: "ישעיהו", icon: "🦅", chapters: 66 },
+                  { name: "ירמיהו", icon: "⛓️", chapters: 52 },
+                  { name: "יחזקאל", icon: "🎡", chapters: 48 },
+                  { name: "תרי עשר", icon: "📜", chapters: 67 }
+              ]
+          },
+          {
+              category: "כתובים",
+              books: [
+                  { name: "תהילים", icon: "🎵", chapters: 150 },
+                  { name: "משלי", icon: "🧠", chapters: 31 },
+                  { name: "איוב", icon: "🤕", chapters: 42 },
+                  { name: "שיר השירים", icon: "❤️", chapters: 8 },
+                  { name: "רות", icon: "🌾", chapters: 4 },
+                  { name: "איכה", icon: "😢", chapters: 5 },
+                  { name: "קהלת", icon: "☀️", chapters: 12 },
+                  { name: "אסתר", icon: "🎭", chapters: 10 },
+                  { name: "דניאל", icon: "🦁", chapters: 12 },
+                  { name: "עזרא", icon: "🧱", chapters: 10 },
+                  { name: "נחמיה", icon: "🧱", chapters: 13 },
+                  { name: "דברי הימים א", icon: "📚", chapters: 29 },
+                  { name: "דברי הימים ב", icon: "📚", chapters: 36 }
+              ]
+          }
+      ];
+
+      const booksView = document.getElementById('books-view');
+      const chaptersGrid = document.getElementById('chapters-grid');
+      const chaptersView = document.getElementById('chapters-view');
+      const titleSpan = document.getElementById('selected-book-title');
+
+      // בניית התצוגה של הספרים לפי קטגוריות
+      tanakhData.forEach(section => {
+          const sectionTitle = document.createElement('div');
+          sectionTitle.className = 'section-title';
+          sectionTitle.innerText = section.category;
+          booksView.appendChild(sectionTitle);
+
+          const sectionGrid = document.createElement('div');
+          sectionGrid.className = 'grid';
+
+          section.books.forEach(book => {
+              const card = document.createElement('div');
+              card.className = 'card';
+              card.innerHTML = `
+                <span class="icon">${book.icon}</span>
+                <div class="title">${book.name}</div>
+                <div class="subtitle">${book.chapters} פרקים</div>
+              `;
+              
+              card.onclick = () => showChapters(book);
+              sectionGrid.appendChild(card);
+          });
+
+          booksView.appendChild(sectionGrid);
+      });
+
+      // הצגת פרקים
+      window.showChapters = (book) => {
+          booksView.classList.add('hidden');
+          chaptersView.classList.remove('hidden');
+          titleSpan.innerText = `פרקי ${book.name}`;
+          chaptersGrid.innerHTML = '';
+
+          for (let i = 1; i <= book.chapters; i++) {
+              const chapterCard = document.createElement('div');
+              chapterCard.className = 'card';
+              chapterCard.innerHTML = `<div class="title">פרק ${i}</div><div style="color:#f5c518; font-size:0.8rem;">דרג ⭐</div>`;
+              
+              chapterCard.onclick = () => {
+                  alert(`בקרוב: דירוג ל-${book.name} פרק ${i}`);
+              };
+              chaptersGrid.appendChild(chapterCard);
+          }
+      };
+
+      // חזרה לרשימת הספרים
+      window.showBooks = () => {
+          chaptersView.classList.add('hidden');
+          booksView.classList.remove('hidden');
+          window.scrollTo(0,0);
+      };
+
+    </script>
+
+</body>
+</html>
