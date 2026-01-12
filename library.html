@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>הספרייה - TanakhDB</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header>
+        <a href="index.html" class="logo-img-wrapper">
+        <img src="logo.png" alt="BDB Logo" style="height: 50px; width: auto;">
+        </a>
+        <div id="auth-section">Loading...</div>
+    </header>
+
+    <div class="container">
+        <h2 style="color: var(--imdb-yellow); border-bottom: 1px solid #333; padding-bottom:10px; margin-bottom: 2rem;">כל הספרים במאגר</h2>
+        <div id="books-container" class="grid"><p>טוען נתונים...</p></div>
+    </div>
+
+    <script type="module">
+        // ייבוא הקונפיגורציה מהקובץ המרכזי
+        import { db, auth, provider } from './firebase-config.js';
+        
+        // ייבוא פקודות עזר
+        import { collection, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+
+        // Auth Logic
+        const authSection = document.getElementById('auth-section');
+        let currentUser = null;
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                authSection.innerHTML = `
+                   <div class="user-area">
+                        <img src="${user.photoURL}" class="user-pic">
+                        <button id="logout-btn" style="background:none; border:none; color:#bbb; cursor:pointer;">יציאה</button>
+                    </div>`;
+                document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
+            } else {
+                currentUser = null;
+                authSection.innerHTML = `<button id="login-btn" class="login-header-btn">התחברות</button>`;
+                document.getElementById('login-btn').addEventListener('click', () => signInWithPopup(auth, provider));
+            }
+        });
+
+        // Load Books
+        async function loadBooks() {
+            const container = document.getElementById('books-container');
+            // בתוך ה-innerHTML של הכרטיס
+            // נוסיף עטיפה של <a> סביב התמונה או הכותרת, או שנהפוך את כל הכרטיס ללחיץ
+            card.innerHTML = `
+                <div style="cursor:pointer;" onclick="window.location.href='book.html?title=${book.title}'">
+                    <div style="color: var(--imdb-yellow);...">...</div>
+                    <h3>${book.title}</h3>
+                    ...
+                </div>
+            `;
+
+            try {
+                const querySnapshot = await getDocs(collection(db, "books"));
+                querySnapshot.forEach((doc) => {
+                    const book = doc.data();
+                    const card = document.createElement('div');
+                    card.className = 'glass-card';
+                    card.innerHTML = `
+                        <div style="color: var(--imdb-yellow); font-size: 0.8rem; font-weight:bold;">${book.category || 'כללי'}</div>
+                        <h3 style="margin: 10px 0;">${book.title}</h3>
+                        <p style="color: #bbb; font-size: 0.9rem; margin-bottom:15px;">${book.summary ? book.summary.substring(0, 100) + '...' : 'אין תקציר'}</p>
+                        <button onclick="rateBook('${book.title}')" style="background:#333; color:white; border:none; padding:5px 10px; cursor:pointer; border-radius:3px;">⭐ דרג</button>
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (error) {
+                console.error(error);
+                container.innerHTML = '<p style="color:red">שגיאה בטעינת נתונים</p>';
+            }
+        }
+
+        window.rateBook = (title) => {
+            if(!currentUser) {
+                alert("עליך להתחבר כדי לדרג");
+                signInWithPopup(auth, provider);
+            } else {
+                alert("תודה על הדירוג של " + title);
+            }
+        }
+
+        loadBooks();
+    </script>
+</body>
+</html>

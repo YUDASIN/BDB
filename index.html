@@ -3,110 +3,135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ספריית התנ"ך שלי</title>
-    <style>
-        body { font-family: sans-serif; background-color: #f4f4f9; padding: 20px; }
-        h1 { text-align: center; color: #333; }
-        
-        .container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .book-card {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: transform 0.2s;
-        }
-        .book-card:hover { transform: translateY(-5px); }
-        .book-title { font-size: 1.5em; font-weight: bold; color: #2c3e50; margin-bottom: 10px; }
-        .book-category { 
-            background-color: #e0e7ff; color: #3730a3; 
-            padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold;
-            display: inline-block; margin-bottom: 10px;
-        }
-        .book-summary { line-height: 1.6; color: #555; }
-    </style>
+    <title>TanakhDB - הבית</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <h1>📚 ספרי התנ"ך</h1>
-    <div id="books-container" class="container">
-        <p style="text-align:center; width:100%">טוען נתונים...</p>
+    <header>
+        <a href="index.html" class="logo-img-wrapper">
+    <img src="logo.png" alt="BDB Logo" style="height: 50px; width: auto;">
+</a>
+        <nav>
+            <a href="library.html" style="color:white; text-decoration:none; margin-left:20px; font-weight:bold;">המאגר המלא</a>
+            <div id="auth-section">
+                <button id="login-btn" class="login-header-btn">התחברות</button>
+            </div>
+        </nav>
+    </header>
+
+    <div class="hero-wrapper">
+        <div class="hero-grid">
+            <div class="main-stage">
+                <img id="stage-img" src="" class="main-image" alt="Featured">
+                <button class="slider-btn next-btn" onclick="nextSlide()">&#10094;</button>
+                <button class="slider-btn prev-btn" onclick="prevSlide()">&#10095;</button>
+                <div class="stage-content">
+                    <h1 id="stage-title" class="stage-title">טוען...</h1>
+                    <p id="stage-desc" class="stage-desc">אנא המתן...</p>
+                    <a href="library.html" style="color: var(--imdb-yellow); text-decoration:none; font-weight:bold;">לפרק המלא ></a>
+                </div>
+            </div>
+
+            <div class="up-next-container">
+                <h3 class="up-next-title">רשימת קריאה</h3>
+                <div id="up-next-list"><p style="color:#666;">טוען...</p></div>
+            </div>
+        </div>
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        // במקום לייבא מפיירבייס, אנחנו מייבאים מהקובץ המקומי שלנו!
+        import { db, auth, provider } from './firebase-config.js';
+        
+        // וכאן אנחנו חייבים לייבא פקודות ספציפיות שלא שמרנו בקונפיג
+        import { collection, getDocs, limit, query } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 
-        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-        const firebaseConfig = {
-        apiKey: "AIzaSyDgU8HrSiI2l3WAAoZ1WcB1Rgs4SYEUBBc",
-        authDomain: "bdb-bible-ratings.firebaseapp.com",
-        projectId: "bdb-bible-ratings",
-        storageBucket: "bdb-bible-ratings.firebasestorage.app",
-        messagingSenderId: "931047373276",
-        appId: "1:931047373276:web:ada62fb6c74101aae3b719",
-        measurementId: "G-Y0M5JPE6TY"
-        };
+        let books = [];
+        let currentIndex = 0;
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+        // ניהול משתמש
+        const authSection = document.getElementById('auth-section');
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                authSection.innerHTML = `
+                    <div class="user-area">
+                        <span style="font-size:0.9rem;">${user.displayName}</span>
+                        <img src="${user.photoURL}" class="user-pic">
+                        <button id="logout-btn" style="background:none; border:none; color:red; cursor:pointer;">X</button>
+                    </div>`;
+                document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
+            } else {
+                authSection.innerHTML = `<button id="login-btn" class="login-header-btn">התחברות</button>`;
+                document.getElementById('login-btn').addEventListener('click', () => signInWithPopup(auth, provider));
+            }
+        });
 
-        async function loadBooks() {
-            const container = document.getElementById('books-container');
-            
+        // טעינת נתונים
+        async function loadFeatured() {
             try {
-                console.log("מתחיל לטעון ספרים...");
-                const querySnapshot = await getDocs(collection(db, "books"));
+                const q = query(collection(db, "books"), limit(5));
+                const querySnapshot = await getDocs(q);
                 
-                container.innerHTML = ''; // מנקה את הודעת הטעינה
+                books = [];
+                querySnapshot.forEach((doc) => books.push(doc.data()));
 
-                if (querySnapshot.empty) {
-                    console.log("הקולקשיין ריק!");
-                    container.innerHTML = '<p>לא נמצאו ספרים במאגר.</p>';
-                    return;
+                if (books.length > 0) {
+                    renderSlide(0);
+                    renderSideList();
+                } else {
+                    document.getElementById('stage-title').innerText = "אין ספרים";
                 }
-
-                querySnapshot.forEach((doc) => {
-                    const book = doc.data();
-                    
-                    // הדפסה לקונסול כדי שנוכל לראות את שמות השדות
-                    console.log("ספר נמצא:", book); 
-
-                    // בדיקה אם קיים שדה summary
-                    let summaryText = "אין תקציר";
-                    if (book.summary) {
-                        summaryText = book.summary;
-                    } else if (book.description) {
-                        summaryText = book.description;
-                    } else {
-                        summaryText = "⚠️ השדה 'summary' חסר במסד הנתונים";
-                    }
-
-                    const card = document.createElement('div');
-                    card.className = 'book-card';
-                    card.innerHTML = `
-                        <div class="book-title">${book.title}</div>
-                        <div class="book-category">${book.category || ''}</div>
-                        <div class="book-summary">${summaryText}</div>
-                    `;
-                    container.appendChild(card);
-                });
-
             } catch (error) {
-                console.error("שגיאה בטעינת הנתונים: ", error);
-                container.innerHTML = '<p style="color:red">שגיאה בטעינת הנתונים. נא לבדוק את ה-Console (F12).</p>';
+                console.error("Error:", error);
+                document.getElementById('stage-title').innerText = "שגיאה בטעינה (בדוק את firebase-config.js)";
             }
         }
 
-        // הפעלת הפונקציה
-        loadBooks();
+        // פונקציות גלובליות (חובה להצמיד ל-window כי זה מודול)
+        window.renderSlide = (index) => {
+            currentIndex = index;
+            const book = books[index];
+            const randomImg = `https://picsum.photos/seed/${book.title}/1200/800`; 
+            document.getElementById('stage-img').src = randomImg;
+            document.getElementById('stage-title').innerText = book.title;
+            document.getElementById('stage-desc').innerText = book.summary || "תקציר חסר...";
+        // במקום סתם library.html
+            document.querySelector('.stage-content a').href = `book.html?title=${book.title}`;
+        };
+
+        window.nextSlide = () => {
+            let next = currentIndex + 1;
+            if (next >= books.length) next = 0;
+            renderSlide(next);
+        };
+
+        window.prevSlide = () => {
+            let prev = currentIndex - 1;
+            if (prev < 0) prev = books.length - 1;
+            renderSlide(prev);
+        };
+
+        function renderSideList() {
+            const listContainer = document.getElementById('up-next-list');
+            listContainer.innerHTML = '';
+            books.forEach((book, idx) => {
+                const item = document.createElement('div');
+                item.className = 'side-item';
+                item.onclick = () => renderSlide(idx);
+                item.innerHTML = `
+                    <img src="https://picsum.photos/seed/${book.title}/100/150" class="side-img">
+                    <div class="side-info">
+                        <h4>${book.title}</h4>
+                        <p>${book.category || 'כללי'}</p>
+                    </div>
+                `;
+                listContainer.appendChild(item);
+            });
+        }
+
+        loadFeatured();
     </script>
 </body>
 </html>

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>BDB - צפייה בספר</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header>
+        <a href="index.html" class="logo">BDB</a>
+        <div id="auth-section">Loading...</div>
+    </header>
+
+    <div id="book-hero" class="book-header">
+        <div class="loader"></div> </div>
+
+    <div class="chapter-list">
+        <h3 style="margin-bottom: 1rem; color: var(--text-dim);">פרקים</h3>
+        <div id="chapters-container">
+            </div>
+    </div>
+
+    <script type="module">
+        import { db, auth, provider } from './firebase-config.js';
+        import { doc, getDoc, collection, getDocs, setDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { onAuthStateChanged, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+
+        // 1. זיהוי המשתמש (כדי שיוכל לדרג)
+        let currentUser = null;
+        const authSection = document.getElementById('auth-section');
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                authSection.innerHTML = `
+                    <div class="user-area">
+                        <img src="${user.photoURL}" class="user-pic">
+                    </div>`;
+            } else {
+                currentUser = null;
+                authSection.innerHTML = `<button id="login-btn" class="login-header-btn">התחברות</button>`;
+                document.getElementById('login-btn').addEventListener('click', () => signInWithPopup(auth, provider));
+            }
+        });
+
+        // 2. קבלת ה-ID של הספר מה-URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const bookTitle = urlParams.get('title'); // אנחנו נעביר את שם הספר בלינק
+
+        if (!bookTitle) {
+            document.body.innerHTML = "<h1 style='text-align:center; margin-top:50px;'>לא נבחר ספר</h1>";
+        } else {
+            loadBookData(bookTitle);
+        }
+
+        // 3. טעינת נתוני הספר
+        async function loadBookData(title) {
+            const hero = document.getElementById('book-hero');
+            
+            // אנחנו מחפשים את הספר לפי ה-ID שלו (שהוא השם שלו כרגע)
+            const docRef = doc(db, "books", title);
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                const book = docSnap.data();
+                const randomImg = `https://picsum.photos/seed/${book.title}/300/450`;
+
+                // רינדור החלק העליון
+                hero.innerHTML = `
+                    <img src="${randomImg}" class="book-cover-large">
+                    <div class="book-info">
+                        <div class="meta">${book.category || 'תנ"ך'}</div>
+                        <h1>${book.title}</h1>
+                        <p class="desc">${book.summary || 'אין תקציר זמין'}</p>
+                    </div>
+                `;
+
+                // יצירת פרקים (כרגע פיקטיבי - בהמשך נמשוך מהדאטה בייס)
+                renderChapters(book.title);
+            } else {
+                hero.innerHTML = "<h1>הספר לא נמצא במאגר</h1>";
+            }
+        }
+
+        // 4. רינדור רשימת הפרקים ודירוג
+        function renderChapters(bookTitle) {
+            const container = document.getElementById('chapters-container');
+            container.innerHTML = '';
+
+            // בשלב זה אין לנו פרקים באמת במסד, אז ניצור 10 פרקים לדוגמה
+            // בהמשך נשמור את הפרקים האמיתיים בתוך Sub-Collection
+            for (let i = 1; i <= 10; i++) {
+                const chapterNum = i;
+                const chapterId = `ch_${i}`; // מזהה ייחודי לפרק
+
+                const row = document.createElement('div');
+                row.className = 'chapter-row';
+                
+                row.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:15px;">
+                        <span class="chapter-num">${i}</span>
+                        <div>
+                            <div class="chapter-title">פרק ${convertNumberToHebrew(i)}</div>
+                            <div style="font-size:0.8rem; color:#666;">תקציר הפרק יופיע כאן...</div>
+                        </div>
+                    </div>
+
+                    <div class="star-rating">
+                        <input type="radio" name="rating-${chapterId}" id="${chapterId}-5" value="5" onclick="rateChapter('${bookTitle}', ${i}, 5)"><label for="${chapterId}-5">★</label>
+                        <input type="radio" name="rating-${chapterId}" id="${chapterId}-4" value="4" onclick="rateChapter('${bookTitle}', ${i}, 4)"><label for="${chapterId}-4">★</label>
+                        <input type="radio" name="rating-${chapterId}" id="${chapterId}-3" value="3" onclick="rateChapter('${bookTitle}', ${i}, 3)"><label for="${chapterId}-3">★</label>
+                        <input type="radio" name="rating-${chapterId}" id="${chapterId}-2" value="2" onclick="rateChapter('${bookTitle}', ${i}, 2)"><label for="${chapterId}-2">★</label>
+                        <input type="radio" name="rating-${chapterId}" id="${chapterId}-1" value="1" onclick="rateChapter('${bookTitle}', ${i}, 1)"><label for="${chapterId}-1">★</label>
+                    </div>
+                `;
+                container.appendChild(row);
+            }
+        }
+
+        // פונקציית עזר להמרת מספרים לאותיות (פשוטה לדוגמה)
+        function convertNumberToHebrew(num) {
+            const letters = ["", "א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט", "י"];
+            return letters[num] || num;
+        }
+
+        // 5. הפונקציה ששולחת דירוג
+        window.rateChapter = async (bookTitle, chapterNum, score) => {
+            if (!currentUser) {
+                alert("עליך להתחבר כדי לדרג!");
+                return;
+            }
+
+            console.log(`Rating: Book=${bookTitle}, Chap=${chapterNum}, Score=${score}, User=${currentUser.uid}`);
+            
+            // כאן נכנס הקוד ששומר לפיירבייס!
+            // אנחנו נשמור את זה בתוך: books -> [BookName] -> ratings -> [ChapterNum_UserId]
+            
+            try {
+                // שמירת הדירוג בתת-קולקשיין
+                // שימוש ב-setDoc כדי שאם המשתמש ידרג שוב, זה יעדכן את הדירוג הקיים
+                const ratingId = `${currentUser.uid}_ch${chapterNum}`;
+                /* הערה: כדי שזה יעבוד צריך לשנות הרשאות בפיירבייס,
+                אבל זה המבנה הנכון:
+                
+                await setDoc(doc(db, "books", bookTitle, "chapters", `ch${chapterNum}`, "ratings", currentUser.uid), {
+                    score: score,
+                    user: currentUser.displayName,
+                    timestamp: new Date()
+                });
+                */
+
+                alert(`דירגת את פרק ${chapterNum} ב-${score} כוכבים!`);
+                
+            } catch (e) {
+                console.error("Error adding rating: ", e);
+            }
+        };
+
+    </script>
+</body>
+</html>

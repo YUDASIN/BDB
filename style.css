@@ -1,0 +1,515 @@
+:root {
+    --bg-dark: #0f0c29;
+    --text-light: #ffffff;
+    --text-dim: #b3b3b3;
+    --accent: #00d2ff; /* תכלת ניאון */
+    --accent-secondary: #3a7bd5;
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: var(--bg-dark);
+    color: var(--text-light);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* --- Liquid Background Animation --- */
+.background-blobs {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    z-index: -1;
+    overflow: hidden;
+    background: #0f0c29;
+}
+
+.blob {
+    position: absolute;
+    filter: blur(80px);
+    opacity: 0.6;
+    animation: float 10s infinite ease-in-out;
+}
+
+.blob-1 { top: -10%; left: -10%; width: 500px; height: 500px; background: #3a1c71; animation-delay: 0s; }
+.blob-2 { bottom: -10%; right: -10%; width: 400px; height: 400px; background: #d76d77; animation-delay: 2s; }
+.blob-3 { top: 40%; left: 40%; width: 300px; height: 300px; background: #ffaf7b; animation-delay: 4s; }
+
+@keyframes float {
+    0% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(30px, -50px) scale(1.1); }
+    100% { transform: translate(0, 0) scale(1); }
+}
+
+/* --- Header --- */
+header {
+    background: rgba(15, 12, 41, 0.7);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--glass-border);
+    padding: 1.5rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.logo {
+    font-size: 1.8rem;
+    font-weight: 800;
+    background: linear-gradient(to right, #00d2ff, #3a7bd5);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-decoration: none;
+}
+
+/* --- Glass Cards --- */
+.container {
+    max-width: 1200px;
+    margin: 3rem auto;
+    padding: 0 1.5rem;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 2rem;
+}
+
+.glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: var(--glass-shadow);
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+}
+
+.glass-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    transition: 0.5s;
+}
+
+.glass-card:hover {
+    transform: translateY(-10px);
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+}
+
+.glass-card:hover::before { left: 100%; }
+
+.book-title {
+    font-size: 1.6rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-light);
+}
+
+.book-category {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--accent);
+    margin-bottom: 1rem;
+    font-weight: bold;
+}
+
+.book-summary {
+    color: var(--text-dim);
+    font-size: 0.95rem;
+    line-height: 1.7;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* --- Hero Section --- */
+.hero {
+    text-align: center;
+    padding: 8rem 1rem;
+}
+
+.hero h1 {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    line-height: 1.2;
+}
+
+.hero p {
+    font-size: 1.5rem;
+    color: var(--text-dim);
+    margin-bottom: 3rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.btn-glow {
+    padding: 1rem 2.5rem;
+    font-size: 1.2rem;
+    color: white;
+    background: linear-gradient(45deg, #3a1c71, #d76d77, #ffaf7b);
+    background-size: 200% 200%;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: 0.3s;
+    animation: gradientMove 3s ease infinite;
+}
+
+.btn-glow:hover {
+    box-shadow: 0 0 20px rgba(215, 109, 119, 0.6);
+    transform: scale(1.05);
+}
+
+@keyframes gradientMove { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+
+.loader {
+    width: 48px; height: 48px;
+    border: 5px solid #FFF;
+    border-bottom-color: var(--accent);
+    border-radius: 50%;
+    margin: 50px auto;
+    display: inline-block;
+    animation: rotation 1s linear infinite;
+}
+@keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+:root {
+    --bg-dark: #0f0c29;
+    --text-light: #ffffff;
+    --text-dim: #b3b3b3;
+    --accent: #00d2ff;
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: var(--bg-dark);
+    color: var(--text-light);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* רקע נוזלי */
+.background-blobs {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    z-index: -1;
+    overflow: hidden;
+    background: #0f0c29;
+}
+
+.blob {
+    position: absolute;
+    filter: blur(80px);
+    opacity: 0.6;
+    animation: float 10s infinite ease-in-out;
+}
+
+.blob-1 { top: -10%; left: -10%; width: 500px; height: 500px; background: #3a1c71; }
+.blob-2 { bottom: -10%; right: -10%; width: 400px; height: 400px; background: #d76d77; animation-delay: 2s; }
+.blob-3 { top: 40%; left: 40%; width: 300px; height: 300px; background: #ffaf7b; animation-delay: 4s; }
+
+@keyframes float {
+    0% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(30px, -50px) scale(1.1); }
+    100% { transform: translate(0, 0) scale(1); }
+}
+
+/* Header */
+header {
+    background: rgba(15, 12, 41, 0.7);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--glass-border);
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky; top: 0; z-index: 100;
+}
+
+.logo {
+    font-size: 1.5rem;
+    font-weight: 800;
+    background: linear-gradient(to right, #00d2ff, #3a7bd5);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-decoration: none;
+}
+
+/* User Profile in Header */
+.user-area {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.user-pic {
+    width: 35px; height: 35px; border-radius: 50%;
+    border: 2px solid var(--accent);
+}
+
+/* Cards & Grid */
+.container { max-width: 1200px; margin: 3rem auto; padding: 0 1.5rem; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 2rem; }
+
+.glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: var(--glass-shadow);
+    transition: all 0.3s ease;
+}
+
+.glass-card:hover { transform: translateY(-10px); border-color: rgba(255,255,255,0.3); }
+
+.book-title { font-size: 1.5rem; margin-bottom: 0.5rem; color: var(--text-light); }
+.book-category { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; color: var(--accent); font-weight: bold; }
+.book-summary { color: var(--text-dim); font-size: 0.95rem; line-height: 1.6; }
+
+/* Buttons */
+.btn-glow {
+    padding: 0.8rem 2rem;
+    color: white;
+    background: linear-gradient(45deg, #3a1c71, #d76d77);
+    border: none; border-radius: 50px; cursor: pointer;
+    text-decoration: none; transition: 0.3s;
+    font-size: 1rem;
+}
+.btn-glow:hover { box-shadow: 0 0 15px rgba(215, 109, 119, 0.6); transform: scale(1.05); }
+
+.hero { text-align: center; padding: 6rem 1rem; }
+.hero h1 { font-size: 3.5rem; margin-bottom: 1rem; }
+
+:root {
+    --bg-dark: #000000; /* רקע שחור מלא */
+    --bg-card: #1a1a1a;
+    --text-light: #ffffff;
+    --text-dim: #b3b3b3;
+    --imdb-yellow: #f5c518; /* הצהוב המפורסם */
+    --accent: #f5c518;
+    --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--text-light);
+    direction: rtl;
+    overflow-x: hidden;
+}
+
+/* Header */
+header {
+    background: #121212;
+    border-bottom: 1px solid #333;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky; top: 0; z-index: 100;
+}
+
+.logo {
+    font-weight: 900; font-size: 1.8rem;
+    background: var(--imdb-yellow);
+    color: black;
+    padding: 5px 10px;
+    border-radius: 5px;
+    text-decoration: none;
+}
+
+/* --- IMDb Style Hero Layout --- */
+.hero-wrapper {
+    max-width: 1400px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+.hero-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr; /* חלוקה: שני שליש ושליש */
+    gap: 1.5rem;
+    height: 600px; /* גובה קבוע לאזור הראשי */
+}
+
+/* Main Stage (החלק הגדול) */
+.main-stage {
+    background: var(--bg-card);
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: flex-end; /* הטקסט למטה */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.main-image {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    position: absolute; top: 0; right: 0;
+    opacity: 0.6;
+    transition: transform 0.5s ease;
+}
+
+.stage-content {
+    position: relative;
+    z-index: 2;
+    padding: 2rem;
+    background: linear-gradient(to top, black, transparent);
+    width: 100%;
+}
+
+.stage-title { font-size: 3rem; margin-bottom: 0.5rem; color: white; }
+.stage-desc { font-size: 1.2rem; color: #ddd; max-width: 80%; margin-bottom: 1rem; }
+
+/* Arrows */
+.slider-btn {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.3);
+    color: white; font-size: 2rem; cursor: pointer;
+    padding: 1rem; z-index: 10;
+    transition: 0.2s;
+}
+.slider-btn:hover { background: var(--imdb-yellow); color: black; }
+.prev-btn { left: 0; border-radius: 0 10px 10px 0; }
+.next-btn { right: 0; border-radius: 10px 0 0 10px; }
+
+/* Up Next List (החלק הצר בצד) */
+.up-next-container {
+    background: var(--bg-card);
+    border-radius: 8px;
+    padding: 1rem;
+    overflow-y: auto; /* גלילה אם יש הרבה */
+}
+
+.up-next-title { color: var(--imdb-yellow); font-weight: bold; margin-bottom: 1rem; font-size: 1.2rem; }
+
+.side-item {
+    display: flex; gap: 10px;
+    padding: 10px;
+    border-bottom: 1px solid #333;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.side-item:hover { background: #333; }
+.side-img { width: 60px; height: 80px; background: #444; object-fit: cover; border-radius: 4px; }
+.side-info h4 { margin-bottom: 5px; font-size: 1rem; }
+.side-info p { font-size: 0.8rem; color: #aaa; }
+
+/* --- Library Grid --- */
+.container { max-width: 1200px; margin: 3rem auto; padding: 0 1.5rem; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem; }
+
+.glass-card {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 1.5rem;
+    transition: 0.2s;
+}
+.glass-card:hover { border-color: var(--imdb-yellow); transform: translateY(-5px); }
+
+/* Buttons & User */
+.login-header-btn {
+    background: var(--imdb-yellow); color: black; font-weight: bold;
+    border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;
+}
+.user-area { display: flex; align-items: center; gap: 10px; }
+.user-pic { width: 32px; height: 32px; border-radius: 50%; }
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .hero-grid { grid-template-columns: 1fr; height: auto; }
+    .main-stage { height: 400px; }
+}
+
+/* --- Book Page & Chapter List --- */
+.book-header {
+    background: linear-gradient(to bottom, rgba(0,0,0,0.8), var(--bg-dark));
+    padding: 3rem 2rem;
+    display: flex;
+    gap: 2rem;
+    align-items: flex-end;
+}
+
+.book-cover-large {
+    width: 200px; height: 300px;
+    object-fit: cover;
+    border-radius: 8px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+
+.book-info h1 { font-size: 3rem; margin-bottom: 0.5rem; color: white; }
+.book-info .meta { color: var(--imdb-yellow); font-weight: bold; margin-bottom: 1rem; }
+.book-info .desc { max-width: 600px; color: #ccc; line-height: 1.6; }
+
+/* רשימת הפרקים */
+.chapter-list {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 2rem;
+}
+
+.chapter-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    transition: 0.2s;
+    border-radius: 4px;
+}
+
+.chapter-row:hover { background: rgba(255,255,255,0.05); }
+
+.chapter-num { font-size: 1.2rem; font-weight: bold; color: #fff; width: 50px; }
+.chapter-title { flex-grow: 1; font-size: 1rem; color: #ddd; }
+
+/* מערכת הכוכבים לפרק */
+.star-rating {
+    display: flex;
+    flex-direction: row-reverse; /* כדי שהבחירה תעבוד נכון ב-CSS */
+    gap: 5px;
+}
+
+.star-rating input { display: none; }
+
+.star-rating label {
+    font-size: 1.2rem;
+    color: #444;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.star-rating label:hover,
+.star-rating label:hover ~ label,
+.star-rating input:checked ~ label {
+    color: var(--imdb-yellow);
+}
